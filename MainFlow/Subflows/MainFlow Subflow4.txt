@@ -1,0 +1,41 @@
+
+FUNCTION 'Log error' GLOBAL
+    DateTime.GetCurrentDateTime.Local DateTimeFormat: 
+DateTime.DateTimeFormat.DateAndTime CurrentDateTime=> CurrentDateTime
+    Text.ConvertDateTimeToText.FromDateTime DateTime: CurrentDateTime StandardFormat: 
+Text.WellKnownDateTimeFormat.GeneralDateTimeLongTime Result=> FormattedDateTime
+    File.WriteText File: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email Archive\\Log 
+File.txt''' TextToWrite: $'''%FormattedDateTime% - %ErrorMessage%''' AppendNewLine: True 
+IfFileExists: File.IfFileExists.Append Encoding: File.FileEncoding.Unicode
+    @@'emailMessage/Sensitivity': ''
+@@connectionDisplayName: 'Crcd08e_shared_office365_5f9f6bac'
+External.InvokeCloudConnector Connection: 'bd91570c-43d0-470a-b821-43f4574060d3' 
+ConnectorId: '/providers/Microsoft.PowerApps/apis/shared_office365' OperationId: 
+'SendEmailV2' @'emailMessage/To': $'''noora.susa39@gmail.com''' 
+@'emailMessage/Subject': $'''PAD Flow Error''' @'emailMessage/Body': $'''There has been an 
+error with running the email flow at %FormattedDateTime%. Please refer to the log file for the 
+details.'''
+END FUNCTION
+
+# [ControlRepository][PowerAutomateDesktop]
+
+{
+  "ControlRepositorySymbols": [],
+  "ImageRepositorySymbol": {
+    "Repository": "{\r\n  \"Folders\": [],\r\n  \"Images\": [],\r\n  \"Version\": 1\r\n}",
+    "ImportMetadata": {},
+    "Name": "imgrepo"
+  },
+  "ConnectionReferences": [
+    {
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+      "DisplayName": "Crcd08e_shared_office365_5f9f6bac",
+      "InternalId": "bd91570c-43d0-470a-b821-43f4574060d3",
+      "IsDisabled": false,
+      "LogicalName": "Crcd08e_shared_office365_5f9f6bac5b1c4f11a2f08a555525c560",
+      "IsEmbedded": false,
+      "ConnectionName": "fe3d01a4510c488ab0d92cb5fba8d293",
+      "ConnectionDisplayName": "nor00002@laurea.fi"
+    }
+  ]
+}

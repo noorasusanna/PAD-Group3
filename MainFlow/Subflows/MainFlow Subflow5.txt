@@ -1,0 +1,11 @@
+
+FUNCTION 'Log successfull' GLOBAL
+    DateTime.GetCurrentDateTime.Local DateTimeFormat: 
+DateTime.DateTimeFormat.DateAndTime CurrentDateTime=> CurrentDateTime
+    Text.ConvertDateTimeToText.FromDateTime DateTime: CurrentDateTime StandardFormat: 
+Text.WellKnownDateTimeFormat.GeneralDateTimeLongTime Result=> FormattedDateTime
+    File.WriteText File: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email Archive\\Log 
+File.txt''' TextToWrite: $'''%FormattedDateTime% - %CurrentItem% handled successfully''' 
+AppendNewLine: True IfFileExists: File.IfFileExists.Append Encoding: 
+File.FileEncoding.Unicode
+END FUNCTION
