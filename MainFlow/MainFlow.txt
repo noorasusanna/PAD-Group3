@@ -52,11 +52,8 @@ LOOP FOREACH CurrentItem IN RelexFiles
         SET Reception TO $'''WH13'''
     ELSE IF Contains(ExcelData, $'''ARCHIVE''', False) THEN
         SET Reception TO $'''ARCHIVE'''
-        File.WriteToCSVFile.WriteCSV VariableToWrite: ExcelData CSVFile: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email Archive\\Archive.csv''' CsvFileEncoding: File.CSVEncoding.UTF8 IncludeColumnNames: True IfFileExists: File.IfFileExists.Overwrite ColumnsSeparator: File.CSVColumnsSeparator.SystemDefault
-        File.Copy Files: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email Archive\\Archive.csv''' Destination: $'''C:\\Users\\Noora\\Documents''' IfFileExists: File.IfExists.Overwrite CopiedFiles=> CSVCopy
-        Outlook.SendEmailThroughOutlook.SendEmail Instance: OutlookInstance Account: $'''noora.ruohonen@student.laurea.fi''' SendTo: $'''noora.susa39@gmail.com''' Subject: $'''Database connection''' Body: $'''This file is going to be uploaded to our database.''' IsBodyHtml: False IsDraft: False Attachments: CSVCopy
-        File.Delete Files: CSVCopy
     ELSE
+        SET ErrorVariable TO $'''ERROR'''
         SET ErrorMessage TO $'''The robot could not find appropriate code to decide what to do with the report, please take a look.'''
         CALL 'Log error'
     END
@@ -73,14 +70,16 @@ LOOP FOREACH CurrentItem IN RelexFiles
         SET Reciever TO $'''noora.susa39@gmail.com'''
         CALL 'Log ending'
     ELSE IF Reception = $'''ARCHIVE''' THEN
-        GOTO 'The End'
+        File.WriteToCSVFile.WriteCSV VariableToWrite: ExcelData CSVFile: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email Archive\\Archive.csv''' CsvFileEncoding: File.CSVEncoding.UTF8 IncludeColumnNames: True IfFileExists: File.IfFileExists.Overwrite ColumnsSeparator: File.CSVColumnsSeparator.SystemDefault
+        File.Copy Files: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email Archive\\Archive.csv''' Destination: $'''C:\\Users\\Noora\\Documents''' IfFileExists: File.IfExists.Overwrite CopiedFiles=> CSVCopy
+        Outlook.SendEmailThroughOutlook.SendEmail Instance: OutlookInstance Account: $'''noora.ruohonen@student.laurea.fi''' SendTo: $'''noora.susa39@gmail.com''' Subject: $'''Database connection''' Body: $'''This file is going to be uploaded to our database.''' IsBodyHtml: False IsDraft: False Attachments: CSVCopy
+        File.Delete Files: CSVCopy
     ELSE
         SET ErrorMessage TO $'''The robot could not determine a proper recipent, please take a look.'''
         CALL 'Log error'
     END
     CALL 'Log successfull'
 END
-LABEL 'The End'
 Outlook.ProcessEmailMessages.MoveEmails Instance: OutlookInstance Account: $'''noora.ruohonen@student.laurea.fi''' EmailsToProcess: RetrievedEmails MailFolder: $'''Archive'''
 ON ERROR REPEAT 1 TIMES WAIT 3
 ON ERROR
