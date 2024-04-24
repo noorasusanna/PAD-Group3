@@ -1,0 +1,131 @@
+
+FUNCTION Main_copy GLOBAL
+    Outlook.Launch Instance=> OutlookInstance
+ON ERROR REPEAT 1 TIMES WAIT 3
+ON ERROR
+    SET ErrorMessage TO $'''There was an error in launching Outlook'''
+    CALL 'Log error'
+    THROW ERROR
+END
+    Outlook.RetrieveEmailMessages.RetrieveEmailsAndSaveAttachments Instance: 
+OutlookInstance Account: $'''noora.ruohonen@student.laurea.fi''' MailFolder: $'''Inbox''' 
+EmailsToRetrieve: Outlook.RetrieveMessagesMode.Unread MarkAsRead: True 
+ReadBodyAsHtml: False SubjectContains: $'''Relex''' SaveAttachmentsInto: 
+$'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email content''' Messages=> 
+RetrievedEmails
+ON ERROR REPEAT 1 TIMES WAIT 3
+ON ERROR
+    SET ErrorMessage TO $'''There was an error in retrieving email messages from Outlook'''
+    CALL 'Log error'
+    THROW ERROR
+END
+    Folder.GetFiles Folder: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email 
+content''' FileFilter: $'''*.xlsx''' IncludeSubfolders: False FailOnAccessDenied: True SortBy1: 
+Folder.SortBy.NoSort SortDescending1: False SortBy2: Folder.SortBy.NoSort 
+SortDescending2: False SortBy3: Folder.SortBy.NoSort SortDescending3: False Files=> 
+RelexFiles
+ON ERROR REPEAT 1 TIMES WAIT 3
+ON ERROR
+    SET ErrorMessage TO $'''There was an error in getting files in folder'''
+    CALL 'Log error'
+    THROW ERROR
+END
+    CALL 'Log email retrieve'
+    LOOP FOREACH CurrentItem IN RelexFiles
+        Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: CurrentItem Visible: 
+False ReadOnly: True Instance=> ExcelInstance
+    ON ERROR REPEAT 1 TIMES WAIT 3
+    ON ERROR
+        SET ErrorMessage TO $'''There was an error in launching Excel'''
+        CALL 'Log error'
+        THROW ERROR
+    END
+        Excel.ReadFromExcel.ReadAllCells Instance: ExcelInstance ReadAsText: False 
+FirstLineIsHeader: True RangeValue=> ExcelData
+    ON ERROR REPEAT 1 TIMES WAIT 3
+    ON ERROR
+        SET ErrorMessage TO $'''Could not read data from the Excel sheet'''
+        CALL 'Log error'
+        THROW ERROR
+    END
+        Excel.CloseExcel.Close Instance: ExcelInstance
+    ON ERROR REPEAT 1 TIMES WAIT 3
+    ON ERROR
+        SET ErrorMessage TO $'''There was an error when trying to close Excel'''
+        CALL 'Log error'
+        THROW ERROR
+    END
+        CALL 'Log excel'
+        IF Contains(ExcelData, $'''WH11''', False) THEN
+            SET Reception TO $'''WH11'''
+        ELSE IF Contains(ExcelData, $'''WH12''', False) THEN
+            SET Reception TO $'''WH12'''
+        ELSE IF Contains(ExcelData, $'''WH13''', False) THEN
+            SET Reception TO $'''WH13'''
+        ELSE IF Contains(ExcelData, $'''ARCHIVE''', False) THEN
+            SET Reception TO $'''ARCHIVE'''
+            File.WriteToCSVFile.WriteCSV VariableToWrite: ExcelData CSVFile: 
+$'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email Archive\\Archive.csv''' 
+CsvFileEncoding: File.CSVEncoding.UTF8 IncludeColumnNames: True IfFileExists: 
+File.IfFileExists.Overwrite ColumnsSeparator: File.CSVColumnsSeparator.SystemDefault
+            File.Copy Files: $'''C:\\Users\\Noora\\Documents\\Laurea\\RPA\\PAD\\Email 
+Archive\\Archive.csv''' Destination: $'''C:\\Users\\Noora\\Documents''' IfFileExists: 
+File.IfExists.Overwrite CopiedFiles=> CSVCopy
+            Outlook.SendEmailThroughOutlook.SendEmail Instance: OutlookInstance Account: 
+$'''noora.ruohonen@student.laurea.fi''' SendTo: $'''noora.susa39@gmail.com''' Subject: 
+$'''Database connection''' Body: $'''This file is going to be uploaded to our database.''' 
+IsBodyHtml: False IsDraft: False Attachments: CSVCopy
+            File.Delete Files: CSVCopy
+        ELSE
+            SET ErrorMessage TO $'''The robot could not find appropriate code to decide what to do 
+with the report, please take a look.'''
+            CALL 'Log error'
+        END
+        IF Reception = $'''WH11''' THEN
+            Outlook.SendEmailThroughOutlook.SendEmail Instance: OutlookInstance Account: 
+$'''noora.ruohonen@student.laurea.fi''' SendTo: $'''noora.susa39@gmail.com''' Subject: 
+$'''Listing 1''' Body: $'''Here is a list for you WH11''' IsBodyHtml: False IsDraft: False 
+Attachments: CurrentItem
+            SET Reciever TO $'''noora.susa39@gmail.com'''
+            CALL 'Log ending'
+        ELSE IF Reception = $'''WH12''' THEN
+            Outlook.SendEmailThroughOutlook.SendEmail Instance: OutlookInstance Account: 
+$'''noora.ruohonen@student.laurea.fi''' SendTo: $'''noora.susa39@gmail.com''' Subject: 
+$'''Listing 2''' Body: $'''Here is a list for you WH12''' IsBodyHtml: False IsDraft: False 
+Attachments: CurrentItem
+            SET Reciever TO $'''noora.susa39@gmail.com'''
+            CALL 'Log ending'
+        ELSE IF Reception = $'''WH13''' THEN
+            Outlook.SendEmailThroughOutlook.SendEmail Instance: OutlookInstance Account: 
+$'''noora.ruohonen@student.laurea.fi''' SendTo: $'''noora.susa39@gmail.com''' Subject: 
+$'''Listing 3''' Body: $'''Here is a list for you WH13''' IsBodyHtml: False IsDraft: False 
+Attachments: CurrentItem
+            SET Reciever TO $'''noora.susa39@gmail.com'''
+            CALL 'Log ending'
+        ELSE IF Reception = $'''ARCHIVE''' THEN
+            GOTO 'The End'
+        ELSE
+            SET ErrorMessage TO $'''The robot could not determine a proper recipent, please take a 
+look.'''
+            CALL 'Log error'
+        END
+        CALL 'Log successfull'
+    END
+    LABEL 'The End'
+    Outlook.ProcessEmailMessages.MoveEmails Instance: OutlookInstance Account: 
+$'''noora.ruohonen@student.laurea.fi''' EmailsToProcess: RetrievedEmails MailFolder: 
+$'''Archive'''
+ON ERROR REPEAT 1 TIMES WAIT 3
+ON ERROR
+    SET NewVar TO $'''There was an error in processing emails, please take a look.'''
+    CALL 'Log error'
+    THROW ERROR
+END
+    Outlook.Close Instance: OutlookInstance
+ON ERROR REPEAT 1 TIMES WAIT 3
+ON ERROR
+    SET ErrorMessage TO $'''There was an error in closing Outlook'''
+    CALL 'Log error'
+    THROW ERROR
+END
+END FUNCTION
